@@ -1,0 +1,87 @@
+name: Python Code and Alembic Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  code-format:
+    name: Format code with black
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install black
+        run: pip install black
+
+      - name: Check code formatting with black
+        run: black ./app --check || true
+
+      - name: Auto-format code with black
+        run: |
+          black ./app
+          git config --global user.name 'Pre-commit Fixer'
+          git config --global user.email 'github-actions[FastApi]@users.noreply.github.com'
+          git add .
+          git commit -m "Apply auto-formatting with black" -a || echo "No changes to commit"
+          git -c http.extraHeader="AUTHORIZATION: bearer ${{ secrets.GITHUB_TOKEN }}" push origin HEAD:refs/heads/${{ github.head_ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  alembic-check:
+    name: Alembic Migration Check
+    runs-on: ubuntu-latest
+    services:
+      postgres_db:
+        image: postgres:12
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: localhost
+      BOT_TOKEN: test_token
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install dependencies using Poetry
+        run: poetry install
+        working-directory: ./app
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+      - name: Run Alembic Upgrade
+        run: poetry run alembic upgrade head
+        working-directory: ./app
