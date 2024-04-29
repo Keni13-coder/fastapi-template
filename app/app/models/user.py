@@ -13,7 +13,7 @@ from app.utils.const import UserRole
 class User(Base):
     """Модель пользователя"""
 
-    login: Mapped[str] = mapped_column(String(255), doc="Логин")
+    login: Mapped[str] = mapped_column(String(255), doc="Логин", unique=True)
     is_authenticated: Mapped[bool] = mapped_column(default=False)
     role: Mapped[UserRole] = mapped_column(
         doc="Роль пользователя", default=UserRole.user

@@ -6,10 +6,14 @@ import pydantic
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, declared_attr
 from sqlalchemy.inspection import inspect
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy import text
+from sqlalchemy import MetaData, text
+
+from app.utils.const import DB_NAMING_CONVENTION
 
 
 class Base(DeclarativeBase):
+    metadata = MetaData(naming_convention=DB_NAMING_CONVENTION)
+    
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )

@@ -5,9 +5,9 @@ from app.db.session import FakeAsyncSessionMaker
 
 class FakeSessionProtocol(Protocol):
     def __init__(self) -> None:
-        self.session: Type[FakeAsyncSessionMaker]
-        self.user: Type[user.TestRepositoryUser]
-        self.token: Type[token.TestRepositoryToken]
+        self.session: FakeAsyncSessionMaker
+        self.user: user.TestRepositoryUser
+        self.token: token.TestRepositoryToken
 
     async def commit(self):
         await self.session.commit()

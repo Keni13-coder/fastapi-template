@@ -8,8 +8,8 @@ from app.repositories import user, token
 class SessionProtocol(Protocol):
     def __init__(self) -> None:
         self.session: AsyncSession
-        self.user: Type[user.RepositoryUser]
-        self.token: Type[token.RepositoryToken]
+        self.user: user.RepositoryUser
+        self.token: token.RepositoryToken
 
     async def commit(self):
         await self.session.commit()

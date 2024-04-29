@@ -1,36 +1,53 @@
-from typing import Type
-
 import pytest
-from tests.integration.utils import RepositoryIntegrationTest
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
+from app.repositories.user import RepositoryUser
+from app.schemas.user import CreateUser
 
-@pytest.mark.parametrize("starter_repository", ["start_user"], indirect=True)
-class TestStartIntegration:
+@pytest.mark.usefixtures('prepare_database')
+class TestUserIntegration:
     """
     Тестирование базового функионала классов репозиторий
     """
+    user = {'model': ''}
 
-    async def test_create(self, starter_repository: Type[RepositoryIntegrationTest]):
-        await starter_repository.create()
+    async def test_create(self, get_session: AsyncSession, create_data_user: CreateUser, repository_user: RepositoryUser):
+        user = await repository_user.create(obj_in=create_data_user.model_dump(exclude={"confirm_password"}))
+        await get_session.commit()
+        assert user
+        self.user['model'] = user
 
-    async def test_get(self, starter_repository: Type[RepositoryIntegrationTest]):
-        await starter_repository.get()
+    async def test_get(self, repository_user: RepositoryUser):
+        assert await repository_user.get(id=self.user['model'].id)
 
-    async def test_list(self, starter_repository: Type[RepositoryIntegrationTest]):
-        await starter_repository.list()
+    async def test_list(self, repository_user: RepositoryUser):
+        assert await repository_user.list()
 
-    async def test_update(self, starter_repository: Type[RepositoryIntegrationTest]):
-        await starter_repository.update()
 
-    async def test_exists_true(
-        self, starter_repository: Type[RepositoryIntegrationTest]
-    ):
-        await starter_repository.exists_true()
+    @pytest.mark.parametrize(
+        'data_user',
+        ['update_data_user_password', 'update_data_user_login'],
+        indirect=True
+    )
+    async def test_update(self, get_session: AsyncSession,  repository_user: RepositoryUser, data_user):
+        old_user = self.user['model']
+        upgrade_user = await repository_user.update(id=self.user['model'].id, obj_in=data_user)
+        await get_session.commit()
+        
+        assert upgrade_user
+        assert old_user != upgrade_user
+        
 
-    async def test_delete(self, starter_repository: Type[RepositoryIntegrationTest]):
-        await starter_repository.delete()
+    async def test_exists_true(self, repository_user: RepositoryUser):
+        assert await repository_user.exists(id=self.user['model'].id)
 
-    async def test_exists_false(
-        self, starter_repository: Type[RepositoryIntegrationTest]
-    ):
-        await starter_repository.exists_false()
+    async def test_delete(self, get_session: AsyncSession, repository_user: RepositoryUser):
+        await repository_user.delete(id=self.user['model'].id)
+        await get_session.commit()
+        statement = text(f'SELECT * FROM public.user WHERE id=:id')
+        result = await get_session.execute(statement=statement, params=dict(id=self.user['model'].id))
+        assert result.scalar_one_or_none() is None
+        
+    async def test_exists_false(self, repository_user: RepositoryUser):
+        assert not await repository_user.exists(id=self.user['model'].id)
