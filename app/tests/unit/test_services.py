@@ -26,39 +26,45 @@ class TestUserService:
         assert len(users) == 1
 
 
-class TestJWTService:    
-    data_access = {'access_token': ''}
-    data_refresh = {'refresh_token': ''}
-    
+class TestJWTService:
+    data_access = {"access_token": ""}
+    data_refresh = {"refresh_token": ""}
+
     async def test_create_accsess_jwt(
         self, jwt_service: ABCJWT, create_jwt_access: dict
     ):
         access = await jwt_service.create_accsess_jwt(**create_jwt_access)
         assert access
-        self.data_access['access_token'] = access
+        self.data_access["access_token"] = access
 
     async def test_create_refresh_jwt(
         self, jwt_service: ABCJWT, create_jwt_refresh: dict
     ):
         refresh = await jwt_service.create_refresh_jwt(**create_jwt_refresh)
         assert refresh
-        self.data_refresh['refresh_token'] = refresh
+        self.data_refresh["refresh_token"] = refresh
 
     async def test_decode_access_token(self, jwt_service: ABCJWT):
-        assert self.data_access['access_token']
-        access_payload = await jwt_service.decode_token(self.data_access['access_token'])
+        assert self.data_access["access_token"]
+        access_payload = await jwt_service.decode_token(
+            self.data_access["access_token"]
+        )
         assert isinstance(access_payload, dict)
         assert access_payload.get("device_id")
 
     async def test_decode_refresh_token(self, jwt_service: ABCJWT):
-        refresh_payload = await jwt_service.decode_token(self.data_refresh['refresh_token'])
+        refresh_payload = await jwt_service.decode_token(
+            self.data_refresh["refresh_token"]
+        )
         assert isinstance(refresh_payload, dict)
         assert refresh_payload.get("jti")
 
     async def test_decode_expired(self, jwt_service: ABCJWT):
         """Должен вызвать ошибку, так как мы только создали токен и он не истек"""
         with pytest.raises(TokenExpiredException):
-            await jwt_service.decode_token(self.data_access['access_token'], expired=True)
+            await jwt_service.decode_token(
+                self.data_access["access_token"], expired=True
+            )
 
     async def test_create_access_refresh_jwt(self, jwt_service: ABCJWT):
         """Проверка создание двух токенов, с возможностью передачи expire_refresh, для обновление refresh_token со старым exp параметром"""

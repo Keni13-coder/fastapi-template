@@ -10,9 +10,10 @@ from app.core.config import settings
 
 
 # region ContextUOW
-@pytest.fixture(scope='package')
+@pytest.fixture(scope="package")
 def get_fakeUOW() -> FakeUOWContext:
     return FakeUOW
+
 
 # endregion
 
@@ -23,10 +24,10 @@ def user_service() -> ABCUserService:
     return UserService
 
 
-
 @pytest.fixture(scope="module")
 def jwt_service() -> ABCJWT:
     return JWTService(algorithm=settings.algorithm, secret_key=settings.secret_key)
+
 
 # endregion
 
@@ -42,9 +43,12 @@ async def get_user_fake(create_data_user: CreateUser):
         assert user
 
         return user
+
+
 # endregion
 
+
 # start region
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def rewrite_lifetime():
     settings.expired_access = 20

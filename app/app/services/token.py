@@ -61,7 +61,10 @@ class TokenService(ABCTokenService):
         return response_tokens
 
     async def refresh_pair_tokens(
-        self, access_token_encode: str, refresh_token_encode: str, uow_context: UOWContextProtocol
+        self,
+        access_token_encode: str,
+        refresh_token_encode: str,
+        uow_context: UOWContextProtocol,
     ) -> ResponseToken:
 
         payload_access: DefaultAccessPayload = await self._jwt_service.decode_token(
@@ -71,28 +74,30 @@ class TokenService(ABCTokenService):
             token=refresh_token_encode
         )
         async with uow_context as uow:
-            refresh_token: TokenSchema =  data_or_error(
+            refresh_token: TokenSchema = data_or_error(
                 data=await uow.token.get(jti=payload_refresh["jti"]),
                 error=NotFoundEntity,
-                params=['refresh_pair_tokens']
+                params=["refresh_pair_tokens"],
             )
-           
-            refresh_token.access_iat = int(refresh_token.access_iat.timestamp()) # в case не разрешить форматировать
+
+            refresh_token.access_iat = int(
+                refresh_token.access_iat.timestamp()
+            )  # в case не разрешить форматировать
 
             match payload_access:
-                
+
                 case {
-                    'sub': refresh_token.user_uid,
-                    'device_id': refresh_token.device_id,
-                    'iat': refresh_token.access_iat,
+                    "sub": refresh_token.user_uid,
+                    "device_id": refresh_token.device_id,
+                    "iat": refresh_token.access_iat,
                 }:
                     ...
                 case _:
                     """Дропаем все сесси одного пользователя или двоих"""
                     if not payload_access["sub"] == refresh_token.user_uid:
-                            if await uow.token.exists(user_uid=payload_access["sub"]):
-                                await uow.token.delete(user_uid=payload_access["sub"])
-                                
+                        if await uow.token.exists(user_uid=payload_access["sub"]):
+                            await uow.token.delete(user_uid=payload_access["sub"])
+
                     await uow.token.delete(user_uid=refresh_token.user_uid)
                     await uow.commit()
                     raise InvalidTokenException("refresh_pair_tokens")

@@ -170,8 +170,7 @@ class JWTService(ABCJWT):
             jti=jti,
             user_uid=user_uid,
             iat=now,
-            exp=expire_refresh or now +
-            timedelta(minutes=settings.expired_refresh),
+            exp=expire_refresh or now + timedelta(minutes=settings.expired_refresh),
         )
 
         return ResponseToken(access_token=access_token, refresh_token=refresh_token)

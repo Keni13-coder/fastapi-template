@@ -16,7 +16,9 @@ class Token(Base):
     user_uid: Mapped[UUID] = mapped_column(
         ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    device_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False, unique=True)
+    device_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False, unique=True
+    )
     access_iat: Mapped[datetime] = mapped_column(type_=TIMESTAMP(timezone=True))
     is_active: Mapped[base.is_active]
 

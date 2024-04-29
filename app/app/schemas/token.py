@@ -14,7 +14,7 @@ class RefreshToken(BaseModel):
 class TokenSchema(RefreshToken):
     id: UUID4
     is_active: bool
-    
+
 
 class UpdateTokens(BaseModel):
     jti: UUID4

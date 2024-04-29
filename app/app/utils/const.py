@@ -4,7 +4,8 @@ import enum
 class UserRole(enum.Enum):
     super_user = "Администратор"
     user = "Пользователь"
-    
+
+
 DB_NAMING_CONVENTION = {
     "ix": "%(column_0_label)s_idx",
     "uq": "%(table_name)s_%(column_0_name)s_key",

@@ -6,7 +6,6 @@ from app.core.config import settings
 from app.utils.utc_now import datetime_utc
 
 
-
 @pytest.fixture(scope="module")
 def create_jwt_access(rewrite_lifetime):
     now = datetime_utc()
