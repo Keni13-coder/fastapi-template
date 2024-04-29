@@ -84,14 +84,20 @@ class RepositoryBase(ABCRepository[ModelType, CreateSchemaType, UpdateSchemaType
     ) -> Optional[ModelType]:
         statement = select(self._model).filter_by(**kwargs)
         res = await self.session.execute(statement)
-        return res.scalars().first().to_dict()
+        try:
+            return res.scalars().first().to_dict()
+        except AttributeError:
+            return
 
     async def list(
         self, offset: int = 0, limit: int = 1000, **kwargs
     ) -> Optional[List[ModelType]]:
         statement = select(self._model).filter_by(**kwargs).offset(offset).limit(limit)
         res = await self.session.execute(statement)
-        return [data.to_dict() for data in res.scalars().all()]
+        try:
+            return [data.to_dict() for data in res.scalars().all()]
+        except AttributeError:
+            return
 
     async def update(
         self, obj_in: Union[UpdateSchemaType, Dict[str, Any]], **kwargs
@@ -108,7 +114,10 @@ class RepositoryBase(ABCRepository[ModelType, CreateSchemaType, UpdateSchemaType
             .returning(self._model)
         )
         update_model = await self.session.execute(statement)
-        return update_model.scalar_one().to_dict()
+        try:
+            return update_model.scalar_one().to_dict()
+        except AttributeError:
+            return
 
     async def delete(self, **kwargs) -> None:
         statement = delete(self._model).filter_by(**kwargs)

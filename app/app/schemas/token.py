@@ -8,18 +8,17 @@ class RefreshToken(BaseModel):
     jti: UUID4
     user_uid: UUID4
     device_id: UUID4
-    access_nfb: datetime
+    access_iat: datetime
 
 
 class TokenSchema(RefreshToken):
     id: UUID4
-    refresh_token: UUID4 = Field(..., alias="jti")
     is_active: bool
-
+    
 
 class UpdateTokens(BaseModel):
     jti: UUID4
-    access_nfb: datetime
+    access_iat: datetime
 
 
 class ResponseToken(BaseModel):

@@ -29,30 +29,6 @@ class UserPassword(BaseModel):
         max_length=100,
         alias="hashed_password",
     )
-    confirm_password: str = Field(
-        ...,
-        title="password",
-        pattern="[A-Za-z0-9@#$%^&+=]{4,}",
-        min_length=4,
-        max_length=100,
-    )
-
-    @validator("confirm_password")
-    def check_passwords_match(cls, v, values):
-        if "password" in values and v != values["password"]:
-            er = {
-                "loc": ("password", "confirm_password"),
-                "msg": "Value error, 'passwords do not match' is not a valid HTTPStatus",
-                "input": {"****", "****"},
-            }
-            raise HTTPException(
-                status_code=status.HTTP_412_PRECONDITION_FAILED, detail=er
-            )
-        return v
-
-    class Config:
-        populate_by_name = True
-        from_attributes = True
 
 
 class CreateUser(BaseUser, UserPassword): ...
