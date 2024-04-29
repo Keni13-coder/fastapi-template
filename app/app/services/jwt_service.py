@@ -9,6 +9,7 @@ import jwt
 from app.core.config import settings
 from app.schemas.token import ResponseToken
 from app.utils.utc_now import datetime_utc
+from app.utils.format_str_in_uuid import format_to_str_or_nothing
 from app.exceptions.jwt_error import (
     InvalidTokenException,
     TokenExpiredException,
@@ -18,7 +19,7 @@ from app.exceptions.jwt_error import (
 
 class DefaultPayload(TypedDict):
     sub: uuid.UUID
-    nfb: datetime
+    iat: datetime
     exp: datetime
 
 
@@ -51,13 +52,13 @@ class ABCJWT(abc.ABC):
 
     @abc.abstractmethod
     async def create_accsess_jwt(
-        self, device_id: uuid.UUID, user_uid: uuid.UUID, nfb: datetime, exp: datetime
+        self, device_id: uuid.UUID, user_uid: uuid.UUID, iat: datetime, exp: datetime
     ) -> str:
         raise NotImplementedError
 
     @abc.abstractmethod
     async def create_refresh_jwt(
-        self, jti: uuid.UUID, user_uid: uuid.UUID, nfb: datetime, exp: datetime
+        self, jti: uuid.UUID, user_uid: uuid.UUID, iat: datetime, exp: datetime
     ) -> str:
         raise NotImplementedError
 
@@ -99,28 +100,27 @@ class JWTService(ABCJWT):
                 jwt=param,
                 key=self._secret_key,
                 algorithms=[self._algorithm],
-                option={**options},
+                options=options,
             )
-        except jwt.exceptions.PyJWTError:
-
+        except jwt.exceptions.PyJWTError as ex:
             raise InvalidTokenException("decode_token_in_option")
 
     async def _create_default_payload(
-        self, user_uid: uuid.UUID, nfb: datetime, exp: datetime
+        self, user_uid: uuid.UUID, iat: datetime, exp: datetime
     ):
-        return {"sub": str(user_uid), "nfb": str(nfb), "exp": exp}
+        return {"sub": str(user_uid), "iat": iat, "exp": exp}
 
     async def create_accsess_jwt(
-        self, device_id: uuid.UUID, user_uid: uuid.UUID, nfb: datetime, exp: datetime
+        self, device_id: uuid.UUID, user_uid: uuid.UUID, iat: datetime, exp: datetime
     ) -> str:
-        payload = await self._create_default_payload(user_uid, nfb, exp)
+        payload = await self._create_default_payload(user_uid, iat, exp)
         payload.update({"device_id": str(device_id)})
         return await self._create_token(payload)
 
     async def create_refresh_jwt(
-        self, jti: uuid.UUID, user_uid: uuid.UUID, nfb: datetime, exp: datetime
+        self, jti: uuid.UUID, user_uid: uuid.UUID, iat: datetime, exp: datetime
     ) -> str:
-        payload = await self._create_default_payload(user_uid, nfb, exp)
+        payload = await self._create_default_payload(user_uid, iat, exp)
         payload.update({"jti": str(jti)})
         return await self._create_token(payload)
 
@@ -130,15 +130,19 @@ class JWTService(ABCJWT):
 
         :param bool expired: Позволяет декодировать истекший токен.
         """
+        result_payload = {}
+
         if expired:
             payload = await self._decode_token_in_option(token=token, verify_exp=False)
 
             if payload["exp"] < datetime_utc().timestamp():
-                return payload
+                result_payload = payload
+            else:
+                raise TokenExpiredException("decode_token")
+        else:
+            result_payload = await self._decode_token_in_option(token=token)
 
-            raise TokenExpiredException("decode_token")
-
-        return await self._decode_token_in_option(token=token)
+        return format_to_str_or_nothing(result_payload)
 
     async def create_access_refresh_jwt(
         self,
@@ -158,14 +162,14 @@ class JWTService(ABCJWT):
         access_token = await self.create_accsess_jwt(
             device_id=device_id,
             user_uid=user_uid,
-            nfb=now,
+            iat=now,
             exp=now + timedelta(minutes=settings.expired_access),
         )
 
         refresh_token = await self.create_refresh_jwt(
             jti=jti,
             user_uid=user_uid,
-            nfb=now,
+            iat=now,
             exp=expire_refresh or now + timedelta(minutes=settings.expired_refresh),
         )
 

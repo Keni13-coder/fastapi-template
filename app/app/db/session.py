@@ -14,7 +14,10 @@ else:
 DATABASE_URL = settings.postgres_url
 
 
-engine = create_async_engine(DATABASE_URL, **DATABASE_PARAMS)
+engine = create_async_engine(
+    DATABASE_URL,
+    **DATABASE_PARAMS,
+)  #  echo=True
 
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 

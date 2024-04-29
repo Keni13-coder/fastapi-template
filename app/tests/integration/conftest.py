@@ -1,38 +1,27 @@
 import pytest
-from _pytest.fixtures import SubRequest
 
-from app.repositories.user import RepositoryUser, CreateUser, UpdateUser
-from tests.integration.utils import TestUserIntegration
-
-
-# user region
-@pytest.fixture(scope="module")
-def start_user(
-    get_session, create_data_user: CreateUser, update_data_user_login: UpdateUser
-):
-    user_integration = TestUserIntegration(
-        repository=RepositoryUser(session=get_session),
-        get_session=get_session,
-        CreateSchema=create_data_user.model_dump(exclude={"confirm_password"}),
-        UpdateSchema=update_data_user_login,
-    )
-
-    return user_integration
+from app.repositories.user import RepositoryUser
+from app.services.jwt_service import JWTService
+from app.services.token import ABCTokenService, TokenService
+from app.uow.context.uow_context import UOWV1
 
 
-# endregion
+@pytest.fixture
+def repository_user(get_session):
+    return RepositoryUser(session=get_session)
 
 
-# start region
-@pytest.fixture(scope="module")
-def starter_repository(request: SubRequest):
+@pytest.fixture(scope="class")
+def token_service() -> ABCTokenService:
+    return TokenService(jwt_service=JWTService)
+
+
+@pytest.fixture(scope="class")
+def get_uow():
+    return UOWV1
+
+
+@pytest.fixture(scope="class")
+def data_user(request):
     result = request.getfixturevalue(request.param)
     return result
-
-
-@pytest.fixture(scope="session", autouse=True)
-async def setup_dependencies_base(prepare_database):
-    return
-
-
-# endregion
