@@ -15,8 +15,9 @@ async def current_user(get_session, create_data_user) -> ResponseUserSchema:
     await get_session.commit()
     return user
 
+
 # Возможно стоит перенести на unit тесты
-# Возможно посмотреть Userservice, переносить или возможно на unit 
+# Возможно посмотреть Userservice, переносить или возможно на unit
 @pytest.mark.usefixtures("prepare_database")
 class TestTokenService:
     """Тестерум создание и обновление пар токенов, для этого утсановите
