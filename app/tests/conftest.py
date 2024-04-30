@@ -6,13 +6,13 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
-from tests.async_database import create_database, database_exists
 from app.db.session import engine, async_sessionmaker
 from app.db.base import Base
 from app.models.user import User
 from app.models.token import Token
 from app.core.config import settings
 
+from tests.async_database import create_database, database_exists
 from tests.fixture_for_schemas.user import (
     create_data_user,
     update_data_user_login,
