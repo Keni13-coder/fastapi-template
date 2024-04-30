@@ -131,9 +131,5 @@ jobs:
             sleep 2
           done 
       - name: Run tests
-<<<<<<< HEAD
         run: poetry pytest tests
-=======
-        run: pytest ./tests/
->>>>>>> 72752dcc4b6536da467e6d2975b28bee6f097b9b
         working-directory: ./app
