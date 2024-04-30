@@ -130,5 +130,5 @@ jobs:
             sleep 2
           done 
       - name: Run tests
-        run: poetry pytest tests
+        run: poetry run pytest tests
         working-directory: ./app
