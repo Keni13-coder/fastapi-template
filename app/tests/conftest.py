@@ -1,7 +1,5 @@
 import asyncio
 
-from typing import AsyncGenerator
-
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
