@@ -85,3 +85,50 @@ jobs:
       - name: Run Alembic Upgrade
         run: poetry run alembic upgrade head
         working-directory: ./app
+  
+  tests-check:
+    name: Test Pytest
+    runs-on: ubuntu-latest
+    services:
+      postgres_db:
+        image: postgres:12
+        env:
+          POSTGRES_DB: template_fastapi
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 1313
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      MODE: test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1313
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: template_fastapi
+      EXPIRED_ACCESS: 0
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install dependencies using Poetry
+        run: poetry install
+        working-directory: ./app
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done 
+      - name: Run tests
+        run: poetry pytest tests
+        working-directory: ./app
