@@ -1,45 +1,58 @@
 from uuid import UUID
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union
+)
 import abc
+import uuid
 
 from pydantic import BaseModel
 from sqlalchemy.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy import insert, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.base import Base
+from app.db.base import Base 
 
-ModelType = TypeVar("ModelType", bound=Union[Base, list])
+ResponseModelType = TypeVar("ResponseModelType", bound=Union[Base, dict])
 
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-class ABCRepository(abc.ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+class ABCRepository(abc.ABC, Generic[ResponseModelType, CreateSchemaType, UpdateSchemaType]):
 
     _model = None
 
-    @abc.abstractmethod
-    def __init__(self, session: AsyncSession) -> None:
-        raise NotImplementedError
+    def __init__(
+        self,
+        session: AsyncSession,
+        ):
+        self.session = session
 
+    
     @abc.abstractmethod
     async def create(
         self, obj_in: Union[CreateSchemaType, Dict[str, Any]]
-    ) -> ModelType:
+    ) -> ResponseModelType:
         raise NotImplementedError
 
     @abc.abstractmethod
     async def get(
         self,
         **kwargs,
-    ) -> Optional[ModelType]:
+    ) -> Optional[ResponseModelType]:
         raise NotImplementedError
 
     @abc.abstractmethod
     async def list(
         self, offset: int = 0, limit: int = 1000, **kwargs
-    ) -> Optional[List[ModelType]]:
+    ) -> Optional[List[ResponseModelType]]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -48,7 +61,7 @@ class ABCRepository(abc.ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaTy
         *,
         obj_id: UUID,
         obj_in: Union[UpdateSchemaType, Dict[str, Any]],
-    ) -> ModelType:
+    ) -> ResponseModelType:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -58,17 +71,17 @@ class ABCRepository(abc.ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaTy
     @abc.abstractmethod
     async def exists(self, **kwargs) -> bool:
         raise NotImplementedError
+    
 
 
-class RepositoryBase(ABCRepository[ModelType, CreateSchemaType, UpdateSchemaType]):
+
+class RepositoryBase(ABCRepository[ResponseModelType, CreateSchemaType, UpdateSchemaType]):
     """Репозиторий с базовым CRUD"""
-
-    def __init__(self, session: AsyncSession):
-        self.session = session
-
+        
     async def create(
-        self, obj_in: Union[CreateSchemaType, Dict[str, Any]]
-    ) -> ModelType:
+        self,
+        obj_in: Union[CreateSchemaType, Dict[str, Any]],
+    ) -> ResponseModelType:
         if isinstance(obj_in, dict):
             create_data = obj_in
         else:
@@ -76,32 +89,34 @@ class RepositoryBase(ABCRepository[ModelType, CreateSchemaType, UpdateSchemaType
         statement = insert(self._model).values(**create_data).returning(self._model)
 
         res = await self.session.execute(statement)
-        return res.scalar_one().to_dict()
+        return res.scalar_one()
 
     async def get(
         self,
         **kwargs,
-    ) -> Optional[ModelType]:
+    ) -> Optional[ResponseModelType]:
         statement = select(self._model).filter_by(**kwargs)
         res = await self.session.execute(statement)
-        try:
-            return res.scalars().first().to_dict()
-        except AttributeError:
-            return
+
+        return res.scalar_one_or_none()
+            
 
     async def list(
-        self, offset: int = 0, limit: int = 1000, **kwargs
-    ) -> Optional[List[ModelType]]:
+        self,
+        offset: int = 0,
+        limit: int = 1000,
+        **kwargs
+    ) -> Optional[List[ResponseModelType]]:
         statement = select(self._model).filter_by(**kwargs).offset(offset).limit(limit)
         res = await self.session.execute(statement)
-        try:
-            return [data.to_dict() for data in res.scalars().all()]
-        except AttributeError:
-            return
+        return res.scalars().all()
+        
 
     async def update(
-        self, obj_in: Union[UpdateSchemaType, Dict[str, Any]], **kwargs
-    ) -> ModelType:
+        self,
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
+        **kwargs
+    ) -> Optional[ResponseModelType]:
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
@@ -114,10 +129,9 @@ class RepositoryBase(ABCRepository[ModelType, CreateSchemaType, UpdateSchemaType
             .returning(self._model)
         )
         update_model = await self.session.execute(statement)
-        try:
-            return update_model.scalar_one().to_dict()
-        except AttributeError:
-            return
+
+        return update_model.scalar_one_or_none()
+
 
     async def delete(self, **kwargs) -> None:
         statement = delete(self._model).filter_by(**kwargs)
@@ -135,25 +149,23 @@ class RepositoryBase(ABCRepository[ModelType, CreateSchemaType, UpdateSchemaType
             return False
 
 
-class TestRepositoryBase(ABCRepository[ModelType, CreateSchemaType, UpdateSchemaType]):
-
-    def __init__(self, session: Any) -> None:
-        self.session = session
+class TestRepositoryBase(ABCRepository[ResponseModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def create(
         self, obj_in: Union[CreateSchemaType, Dict[str, Any]]
-    ) -> ModelType:
+    ) -> ResponseModelType:
         if isinstance(obj_in, dict):
             create_data = obj_in
         else:
             create_data = obj_in.model_dump(exclude_unset=True)
+        create_data['id'] = uuid.uuid4()
         self._model.append(create_data)
         return self._model[-1]
 
     async def get(
         self,
         **kwargs,
-    ) -> Optional[ModelType]:
+    ) -> Optional[ResponseModelType]:
         for data in self._model:
             for value in data.values():
                 if value in kwargs.values():
@@ -162,7 +174,7 @@ class TestRepositoryBase(ABCRepository[ModelType, CreateSchemaType, UpdateSchema
 
     async def list(
         self, offset: int = 0, limit: int = 1000, **kwargs
-    ) -> Optional[List[ModelType]]:
+    ) -> Optional[List[ResponseModelType]]:
         resul_list = []
         for data in self._model:
             for value in data.values():
@@ -174,7 +186,7 @@ class TestRepositoryBase(ABCRepository[ModelType, CreateSchemaType, UpdateSchema
 
     async def update(
         self, obj_in: Union[UpdateSchemaType, Dict[str, Any]], **kwargs
-    ) -> ModelType:
+    ) -> ResponseModelType:
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:

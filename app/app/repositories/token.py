@@ -7,5 +7,5 @@ class RepositoryToken(RepositoryBase[Token, RefreshToken, UpdateTokens]):
     _model = Token
 
 
-class TestRepositoryToken(TestRepositoryBase[list, RefreshToken, UpdateTokens]):
+class TestRepositoryToken(TestRepositoryBase[dict, RefreshToken, UpdateTokens]):
     _model = []

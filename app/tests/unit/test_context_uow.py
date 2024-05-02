@@ -6,19 +6,20 @@ from tests.unit.conftest import FakeUOWContext
 
 class TestContextUser:
 
+    user_data = {}
     async def test_create_user(
         self, get_fakeUOW: FakeUOWContext, create_data_user: CreateUser
     ):
         async with get_fakeUOW as uow:
 
             data = create_data_user.model_dump()
-            data["id"] = "1"
             user = await uow.user.create(obj_in=data)
             await uow.commit()
 
             assert get_fakeUOW.session.is_commit
             assert user
             assert len(uow.user._model) == 1
+            self.user_data.update(user)
 
         assertional_session_aexit(get_fakeUOW)
 
@@ -42,7 +43,7 @@ class TestContextUser:
         self, get_fakeUOW: FakeUOWContext, update_data_user_login: UpdateLogin
     ):
         async with get_fakeUOW as uow:
-            user = await uow.user.update(id="1", obj_in=update_data_user_login)
+            user = await uow.user.update(id=self.user_data['id'], obj_in=update_data_user_login)
             await uow.commit()
 
             assert get_fakeUOW.session.is_commit
@@ -56,7 +57,7 @@ class TestContextUser:
     ):
 
         async with get_fakeUOW as uow:
-            user = await uow.user.update(id="1", obj_in=update_data_user_password)
+            user = await uow.user.update(id=self.user_data['id'], obj_in=update_data_user_password)
             await uow.commit()
 
             assert get_fakeUOW.session.is_commit
@@ -67,14 +68,14 @@ class TestContextUser:
 
     async def test_exists_true(self, get_fakeUOW: FakeUOWContext):
         async with get_fakeUOW as uow:
-            result = await uow.user.exists(id="1")
+            result = await uow.user.exists(id=self.user_data['id'])
             assert result
 
         assertional_session_aexit(get_fakeUOW)
 
     async def test_delete_user(self, get_fakeUOW: FakeUOWContext):
         async with get_fakeUOW as uow:
-            await uow.user.delete(id="1")
+            await uow.user.delete(id=self.user_data['id'])
             await uow.commit()
 
             assert get_fakeUOW.session.is_commit
@@ -85,46 +86,30 @@ class TestContextUser:
 
     async def test_exists_fasle(self, get_fakeUOW: FakeUOWContext):
         async with get_fakeUOW as uow:
-            result = await uow.user.exists(id="1")
+            result = await uow.user.exists(id=self.user_data['id'])
             assert not result
 
         assertional_session_aexit(get_fakeUOW)
 
 
-@pytest.fixture(scope="class")
-def data_jti():
-    __jti = ""
-
-    def _jti(jti=""):
-        global __jti
-        if jti:
-            __jti = jti
-            return jti
-        else:
-            return __jti
-
-    yield _jti
-
-    __jti = ""
-
-
+@pytest.mark.usefixtures('high_lifetime')
 class TestContextToken:
+    data_jti = {}
 
     async def test_create_token(
-        self, get_fakeUOW: FakeUOWContext, create_data_token, data_jti
+        self, get_fakeUOW: FakeUOWContext, create_data_token
     ):
         async with get_fakeUOW as uow:
-            create_data_token["id"] = "1"
             token = await uow.token.create(create_data_token)
             assert token
             assert len(uow.token._model) == 1
 
         assertional_session_aexit(get_fakeUOW)
-        assert data_jti(create_data_token["jti"])
+        self.data_jti.update({'jti': create_data_token["jti"]}) 
 
-    async def test_get_token(self, get_fakeUOW: FakeUOWContext, data_jti):
+    async def test_get_token(self, get_fakeUOW: FakeUOWContext):
         async with get_fakeUOW as uow:
-            token = await uow.token.get(jti=data_jti())
+            token = await uow.token.get(jti=self.data_jti['jti'])
             assert token
 
         assertional_session_aexit(get_fakeUOW)
@@ -139,31 +124,31 @@ class TestContextToken:
         assertional_session_aexit(get_fakeUOW)
 
     async def test_update_token(
-        self, get_fakeUOW: FakeUOWContext, update_data_token, data_jti
+        self, get_fakeUOW: FakeUOWContext, update_data_token
     ):
         async with get_fakeUOW as uow:
-            token = await uow.token.update(obj_id="1", obj_in=update_data_token)
+            token = await uow.token.update(jti=self.data_jti['jti'], obj_in=update_data_token)
             assert token
-            assert token["jti"] != data_jti()
-            assert data_jti(token["jti"])
+            assert token["jti"] != self.data_jti['jti']
+            self.data_jti.update({'jti': token["jti"]})
         assertional_session_aexit(get_fakeUOW)
 
-    async def test_exists_true(self, get_fakeUOW: FakeUOWContext, data_jti):
+    async def test_exists_true(self, get_fakeUOW: FakeUOWContext):
 
         async with get_fakeUOW as uow:
-            assert await uow.token.exists(jti=data_jti())
+            assert await uow.token.exists(jti=self.data_jti['jti'])
 
         assertional_session_aexit(get_fakeUOW)
 
     async def test_delete_token(self, get_fakeUOW: FakeUOWContext):
         async with get_fakeUOW as uow:
-            await uow.token.delete(obj_id="1")
+            await uow.token.delete(jti=self.data_jti['jti'])
             assert uow.token._model == []
 
         assertional_session_aexit(get_fakeUOW)
 
-    async def test_exists_fasle(self, get_fakeUOW: FakeUOWContext, data_jti):
+    async def test_exists_fasle(self, get_fakeUOW: FakeUOWContext):
         async with get_fakeUOW as uow:
-            assert not await uow.token.exists(jti=data_jti())
+            assert not await uow.token.exists(jti=self.data_jti['jti'])
 
         assertional_session_aexit(get_fakeUOW)

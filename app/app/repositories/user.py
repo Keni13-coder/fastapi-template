@@ -7,5 +7,5 @@ class RepositoryUser(RepositoryBase[User, CreateUser, UpdateUser]):
     _model = User
 
 
-class TestRepositoryUser(TestRepositoryBase[list, CreateUser, UpdateUser]):
+class TestRepositoryUser(TestRepositoryBase[dict, CreateUser, UpdateUser]):
     _model = []
