@@ -80,7 +80,7 @@ class ABCJWT(abc.ABC):
         :rtype: ResponseToken
         """
         raise NotImplementedError
-    
+
     @abc.abstractmethod
     async def is_latest_refresh(self, refresh_exp: int) -> bool:
         raise NotImplementedError
@@ -171,15 +171,14 @@ class JWTService(ABCJWT):
         )
         exp = expire_refresh or now + timedelta(minutes=settings.expired_refresh)
         refresh_token = await self.create_refresh_jwt(
-            jti=jti,
-            user_uid=user_uid,
-            iat=now,
-            exp=exp
+            jti=jti, user_uid=user_uid, iat=now, exp=exp
         )
 
-        return ResponseToken(access_token=access_token, refresh_token=refresh_token, expire_refresh=exp)
-    
+        return ResponseToken(
+            access_token=access_token, refresh_token=refresh_token, expire_refresh=exp
+        )
+
     async def is_latest_refresh(self, refresh_exp: int) -> bool:
         return refresh_exp > int(
             (datetime_utc() + timedelta(minutes=settings.expired_access)).timestamp()
-            )
+        )

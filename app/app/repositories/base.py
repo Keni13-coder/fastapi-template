@@ -1,14 +1,5 @@
 from uuid import UUID
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union
-)
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 import abc
 import uuid
 
@@ -25,17 +16,18 @@ CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-class ABCRepository(abc.ABC, Generic[ResponseModelType, CreateSchemaType, UpdateSchemaType]):
+class ABCRepository(
+    abc.ABC, Generic[ResponseModelType, CreateSchemaType, UpdateSchemaType]
+):
 
     _model = None
 
     def __init__(
         self,
         session: AsyncSession,
-        ):
+    ):
         self.session = session
 
-    
     @abc.abstractmethod
     async def create(
         self, obj_in: Union[CreateSchemaType, Dict[str, Any]]
@@ -73,11 +65,11 @@ class ABCRepository(abc.ABC, Generic[ResponseModelType, CreateSchemaType, Update
         raise NotImplementedError
     
 
-
-
-class RepositoryBase(ABCRepository[ResponseModelType, CreateSchemaType, UpdateSchemaType]):
+class RepositoryBase(
+    ABCRepository[ResponseModelType, CreateSchemaType, UpdateSchemaType]
+):
     """Репозиторий с базовым CRUD"""
-        
+
     async def create(
         self,
         obj_in: Union[CreateSchemaType, Dict[str, Any]],
@@ -99,23 +91,16 @@ class RepositoryBase(ABCRepository[ResponseModelType, CreateSchemaType, UpdateSc
         res = await self.session.execute(statement)
 
         return res.scalar_one_or_none()
-            
 
     async def list(
-        self,
-        offset: int = 0,
-        limit: int = 1000,
-        **kwargs
+        self, offset: int = 0, limit: int = 1000, **kwargs
     ) -> Optional[List[ResponseModelType]]:
         statement = select(self._model).filter_by(**kwargs).offset(offset).limit(limit)
         res = await self.session.execute(statement)
         return res.scalars().all()
-        
 
     async def update(
-        self,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
-        **kwargs
+        self, obj_in: Union[UpdateSchemaType, Dict[str, Any]], **kwargs
     ) -> Optional[ResponseModelType]:
         if isinstance(obj_in, dict):
             update_data = obj_in
@@ -131,7 +116,6 @@ class RepositoryBase(ABCRepository[ResponseModelType, CreateSchemaType, UpdateSc
         update_model = await self.session.execute(statement)
 
         return update_model.scalar_one_or_none()
-
 
     async def delete(self, **kwargs) -> None:
         statement = delete(self._model).filter_by(**kwargs)
@@ -149,7 +133,9 @@ class RepositoryBase(ABCRepository[ResponseModelType, CreateSchemaType, UpdateSc
             return False
 
 
-class TestRepositoryBase(ABCRepository[ResponseModelType, CreateSchemaType, UpdateSchemaType]):
+class TestRepositoryBase(
+    ABCRepository[ResponseModelType, CreateSchemaType, UpdateSchemaType]
+):
 
     async def create(
         self, obj_in: Union[CreateSchemaType, Dict[str, Any]]
@@ -158,7 +144,7 @@ class TestRepositoryBase(ABCRepository[ResponseModelType, CreateSchemaType, Upda
             create_data = obj_in
         else:
             create_data = obj_in.model_dump(exclude_unset=True)
-        create_data['id'] = uuid.uuid4()
+        create_data["id"] = uuid.uuid4()
         self._model.append(create_data)
         return self._model[-1]
 

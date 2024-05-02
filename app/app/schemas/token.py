@@ -15,7 +15,6 @@ class TokenSchema(RefreshToken):
     id: UUID4
 
 
-
 class UpdateTokens(BaseModel):
     jti: UUID4
     access_iat: datetime
@@ -28,6 +27,13 @@ class ResponseToken(BaseModel):
     token_type: Literal["bearer"] = "bearer"
     
     @field_validator('expire_refresh')
+    @classmethod
+    def exp_to_int(cls, v):
+        if isinstance(v, int):
+            return v
+        return int(v.timestamp())
+
+    @field_validator("expire_refresh")
     @classmethod
     def exp_to_int(cls, v):
         if isinstance(v, int):
