@@ -22,5 +22,3 @@ class User(Base):
     created_at: Mapped[base.created_at]
     updated_at: Mapped[base.updated_at]
     is_active: Mapped[base.is_active]
-
-    __serialize_class__ = ResponseUserSchema

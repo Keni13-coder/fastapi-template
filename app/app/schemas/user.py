@@ -16,7 +16,7 @@ class BaseUser(BaseModel):
 
 class ResponseUserSchema(BaseUser):
     id: UUID | None = Field(title="ID", default=None)
-    is_active: bool = Field(title="Активность")
+    is_active: bool = Field(title="Активность", default=True)
     role: UserRole = Field(title="Роль пользователя", default=UserRole.user)
 
 

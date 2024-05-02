@@ -1,12 +1,17 @@
 from datetime import timedelta
 import uuid
 import pytest
+import asyncio
 
-from app.uow.typing.fake_type_protocol import FakeUOWContextProtocol
-from app.exceptions.jwt_error import TokenExpiredException
-from app.services.user import ABCUserService
+from app.exceptions.jwt_error import TokenExpiredException, InvalidTokenException
+from app.exceptions.not_found import NotFoundEntity
+from app.services.user import ABCUserService, ResponseUserSchema
+from app.services.token import ABCTokenService
 from app.services.jwt_service import ABCJWT
+from app.uow.typing.fake_type_protocol import FakeUOWContextProtocol
 from app.utils.utc_now import datetime_utc
+from app.core.config import settings
+
 
 
 class TestUserService:
@@ -15,9 +20,9 @@ class TestUserService:
         self,
         get_fakeUOW: FakeUOWContextProtocol,
         user_service: ABCUserService,
-        get_user_fake,
+        get_user_fake: ResponseUserSchema,
     ):
-        user = await user_service.get_user(get_user_fake["id"], get_fakeUOW)
+        user = await user_service.get_user(get_user_fake.id, get_fakeUOW)
         assert user
 
     async def test_list_users(self, get_fakeUOW, user_service: ABCUserService):
@@ -25,7 +30,7 @@ class TestUserService:
         assert users
         assert len(users) == 1
 
-
+@pytest.mark.usefixtures('high_lifetime')
 class TestJWTService:
     data_access = {"access_token": ""}
     data_refresh = {"refresh_token": ""}
@@ -97,3 +102,121 @@ class TestJWTService:
         )
 
         assert decode_refresh_without_expire["exp"] != decode_refresh_with_expire["exp"]
+
+
+@pytest.mark.usefixtures('low_lifetime')
+class TestTokenService:
+    """Тестерум создание и обновление пар токенов, для этого утсановите
+    expired_access=0 в env configuration
+    """
+
+    tokens = {}
+
+    async def test_create_pair_tokens(
+        self,
+        get_fakeUOW: FakeUOWContextProtocol,
+        token_service: ABCTokenService,
+        get_user_fake: ResponseUserSchema,
+    ):
+        tokens = await token_service.create_pair_tokens(
+            user_uid=get_user_fake.id, uow_context=get_fakeUOW
+        )
+        assert tokens
+        async with get_fakeUOW as uow:
+            token = await uow.token.get(user_uid=get_user_fake.id)
+            assert token
+        self.tokens["access_token"] = tokens.access_token
+        self.tokens["refresh_token"] = tokens.refresh_token
+
+
+    async def test_refresh_pair_tokens(
+        self, get_fakeUOW: FakeUOWContextProtocol, token_service: ABCTokenService
+    ):
+        """Проверка старого токена и нового, также проверить логики удаления у одного и у двух пользователей"""
+
+        assert self.tokens
+        await asyncio.sleep(1) # для создание токенов с разрывом по времени
+        token_data = await token_service.refresh_pair_tokens(
+            access_token_encode=self.tokens["access_token"],
+            refresh_token_encode=self.tokens["refresh_token"],
+            uow_context=get_fakeUOW,
+        )
+        assert token_data
+
+        async with get_fakeUOW as uow:
+            list_token = await uow.token.list()
+
+            assert list_token and len(list_token) == 1
+
+        self.tokens["refresh_token"] = token_data.refresh_token
+        self.tokens["access_token"] = token_data.access_token
+          
+    
+    @pytest.mark.usefixtures('last_time_refresh')
+    async def test_last_refresh_pair_tokens(self, get_fakeUOW: FakeUOWContextProtocol, token_service: ABCTokenService):
+        assert self.tokens
+        
+        token_data = await token_service.refresh_pair_tokens(
+            access_token_encode=self.tokens["access_token"],
+            refresh_token_encode=self.tokens["refresh_token"],
+            uow_context=get_fakeUOW,
+        )
+        assert token_data
+
+        async with get_fakeUOW as uow:
+            list_token = await uow.token.list()
+
+            assert not list_token
+
+        self.tokens["refresh_token"] = token_data.refresh_token
+        
+    
+
+    async def test_raise_NotFoundEntity(
+        self, get_fakeUOW: FakeUOWContextProtocol, token_service: ABCTokenService
+    ):
+
+        with pytest.raises(NotFoundEntity):
+            await token_service.refresh_pair_tokens(
+                access_token_encode=self.tokens["access_token"],
+                refresh_token_encode=self.tokens["refresh_token"],
+                uow_context=get_fakeUOW,
+            )
+             
+    async def test_raise_InvalidTokenException(
+        self,
+        get_fakeUOW: FakeUOWContextProtocol,
+        token_service: ABCTokenService,
+        get_user_fake: ResponseUserSchema,
+        ):
+        
+        pair_token = await token_service.create_pair_tokens(user_uid=get_user_fake.id, uow_context=get_fakeUOW)
+        async with get_fakeUOW as uow:
+            list_token = await uow.token.list()
+            assert list_token
+
+        with pytest.raises(InvalidTokenException):
+            await token_service.refresh_pair_tokens(
+                access_token_encode=self.tokens["access_token"],
+                refresh_token_encode=pair_token.refresh_token,
+                uow_context=get_fakeUOW,
+            )
+        async with get_fakeUOW as uow:
+            assert not await uow.token.list()
+    
+    @pytest.mark.usefixtures('high_lifetime')  
+    async def test_delete_token(
+        self,
+        get_fakeUOW: FakeUOWContextProtocol,
+        token_service: ABCTokenService,
+        get_user_fake: ResponseUserSchema
+        ):
+        pair_token = await token_service.create_pair_tokens(user_uid=get_user_fake.id, uow_context=get_fakeUOW)
+        async with get_fakeUOW as uow:
+            list_token = await uow.token.list()
+            assert list_token
+        
+        result = await token_service.delete_token(access_token_encode=pair_token.access_token, uow_context=get_fakeUOW)
+        assert result is None
+        
+        
