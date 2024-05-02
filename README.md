@@ -1,5 +1,5 @@
 # FastApi Template
-[![tests-check Status](https://github.com/{USERNAME}/{PROJECT}/workflows/{ACTIONNAME}/badge.svg)](https://github.com/{USERNAME}/{PROJECT}/actions/workflows/{FILENAME}.yml)
+[![tests-check Status](https://github.com/Keni13-coder/fastapi-template/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/Keni13-coder/fastapi-template/actions/workflows/ci.yml)
 ### Запуск шаблона:
 
 1) Создайте файл .env, данные нужные для запуска можно посмотреть в .env.example
