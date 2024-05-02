@@ -81,6 +81,10 @@ class ABCJWT(abc.ABC):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
+    async def is_latest_refresh(self, refresh_exp: int) -> bool:
+        raise NotImplementedError
+
 
 class JWTService(ABCJWT):
 
@@ -165,12 +169,16 @@ class JWTService(ABCJWT):
             iat=now,
             exp=now + timedelta(minutes=settings.expired_access),
         )
-
+        exp = expire_refresh or now + timedelta(minutes=settings.expired_refresh)
         refresh_token = await self.create_refresh_jwt(
-            jti=jti,
-            user_uid=user_uid,
-            iat=now,
-            exp=expire_refresh or now + timedelta(minutes=settings.expired_refresh),
+            jti=jti, user_uid=user_uid, iat=now, exp=exp
         )
 
-        return ResponseToken(access_token=access_token, refresh_token=refresh_token)
+        return ResponseToken(
+            access_token=access_token, refresh_token=refresh_token, expire_refresh=exp
+        )
+
+    async def is_latest_refresh(self, refresh_exp: int) -> bool:
+        return refresh_exp > int(
+            (datetime_utc() + timedelta(minutes=settings.expired_access)).timestamp()
+        )
