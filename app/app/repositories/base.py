@@ -8,7 +8,7 @@ from sqlalchemy.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy import insert, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.base import Base 
+from app.db.base import Base
 
 ResponseModelType = TypeVar("ResponseModelType", bound=Union[Base, dict])
 
@@ -63,7 +63,7 @@ class ABCRepository(
     @abc.abstractmethod
     async def exists(self, **kwargs) -> bool:
         raise NotImplementedError
-    
+
 
 class RepositoryBase(
     ABCRepository[ResponseModelType, CreateSchemaType, UpdateSchemaType]

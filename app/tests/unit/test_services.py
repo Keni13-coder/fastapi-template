@@ -179,6 +179,7 @@ class TestTokenService:
                 refresh_token_encode=self.tokens["refresh_token"],
                 uow_context=get_fakeUOW,
             )
+
     async def test_raise_InvalidTokenException(
         self,
         get_fakeUOW: FakeUOWContextProtocol,

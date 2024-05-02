@@ -25,8 +25,8 @@ class ResponseToken(BaseModel):
     access_token: str
     expire_refresh: Union[int, datetime]
     token_type: Literal["bearer"] = "bearer"
-    
-    @field_validator('expire_refresh')
+
+    @field_validator("expire_refresh")
     @classmethod
     def exp_to_int(cls, v):
         if isinstance(v, int):

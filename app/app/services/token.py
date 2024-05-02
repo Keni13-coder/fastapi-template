@@ -115,7 +115,7 @@ class TokenService(ABCTokenService):
 
         jti = uuid.uuid4()
         now = datetime_utc()
-    
+
         async with uow_context as uow:
             if await self._jwt_service.is_latest_refresh(payload_refresh["exp"]):
                 await uow.token.update(
@@ -125,13 +125,12 @@ class TokenService(ABCTokenService):
                 await uow.token.delete(jti=payload_refresh["jti"])
             await uow.commit()
 
-
         return await self._jwt_service.create_access_refresh_jwt(
             user_uid=refresh_token.user_uid,
             device_id=refresh_token.device_id,
             jti=jti,
             now=now,
-            expire_refresh=payload_refresh["exp"]
+            expire_refresh=payload_refresh["exp"],
         )
 
     async def delete_token(
