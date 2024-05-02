@@ -6,8 +6,8 @@ from app.core.config import settings
 from app.utils.utc_now import datetime_utc
 
 
-@pytest.fixture(scope="module")
-def create_jwt_access(rewrite_lifetime):
+@pytest.fixture(scope="class")
+def create_jwt_access():
     now = datetime_utc()
     return dict(
         device_id=uuid.uuid4(),
@@ -17,8 +17,8 @@ def create_jwt_access(rewrite_lifetime):
     )
 
 
-@pytest.fixture(scope="module")
-def create_jwt_refresh(rewrite_lifetime):
+@pytest.fixture(scope="class")
+def create_jwt_refresh():
     now = datetime_utc()
     return dict(
         jti=uuid.uuid4(),
