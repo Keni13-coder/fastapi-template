@@ -32,9 +32,15 @@ def user_service() -> ABCUserService:
 def jwt_service() -> ABCJWT:
     return JWTService(algorithm=settings.algorithm, secret_key=settings.secret_key)
 
+
 @pytest.fixture(scope="class")
 def token_service() -> ABCTokenService:
-    return TokenService(jwt_service=JWTService, serializer=TokenEntitySerializer(serialize_schema=TokenSchema))
+    return TokenService(
+        jwt_service=JWTService,
+        serializer=TokenEntitySerializer(serialize_schema=TokenSchema),
+    )
+
+
 # endregion
 
 
@@ -58,7 +64,8 @@ async def get_user_fake(create_data_user: CreateUser):
 @pytest.fixture(scope="module")
 def high_lifetime():
     settings.expired_access = 20
-    
+
+
 @pytest.fixture
 def last_time_refresh():
     settings.expired_access = 20

@@ -15,7 +15,6 @@ class TokenSchema(RefreshToken):
     id: UUID4
 
 
-
 class UpdateTokens(BaseModel):
     jti: UUID4
     access_iat: datetime
@@ -26,8 +25,8 @@ class ResponseToken(BaseModel):
     access_token: str
     expire_refresh: Union[int, datetime]
     token_type: Literal["bearer"] = "bearer"
-    
-    @field_validator('expire_refresh')
+
+    @field_validator("expire_refresh")
     @classmethod
     def exp_to_int(cls, v):
         if isinstance(v, int):
