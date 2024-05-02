@@ -11,14 +11,18 @@ from app.core.config import settings
 from app.uow.typing.type_protocol import UOWContextProtocol
 from app.utils.utc_now import datetime_utc
 from app.utils.validate_data import data_or_error
+from app.services.serialize_model import ABCEntitySerializer
 
 
 class ABCTokenService(abc.ABC):
 
-    def __init__(self, jwt_service: Type[ABCJWT]) -> None:
+    def __init__(
+        self, jwt_service: Type[ABCJWT], serializer: ABCEntitySerializer
+    ) -> None:
         self._jwt_service = jwt_service(
             algorithm=settings.algorithm, secret_key=settings.secret_key
         )
+        self._token_serializer = serializer
 
     @abc.abstractmethod
     async def create_pair_tokens(
@@ -33,7 +37,9 @@ class ABCTokenService(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def delete_token(self):
+    async def delete_token(
+        self, access_token_encode: str, uow_context: UOWContextProtocol
+    ) -> None:
         raise NotImplementedError
 
 
@@ -46,8 +52,10 @@ class TokenService(ABCTokenService):
         device_id = uuid.uuid4()
         now = datetime_utc()
 
-        response_tokens = await self._jwt_service.create_access_refresh_jwt(
-            device_id=device_id, jti=jti, user_uid=user_uid, now=now
+        response_tokens: ResponseToken = (
+            await self._jwt_service.create_access_refresh_jwt(
+                device_id=device_id, jti=jti, user_uid=user_uid, now=now
+            )
         )
 
         async with uow_context as uow:
@@ -74,10 +82,13 @@ class TokenService(ABCTokenService):
             token=refresh_token_encode
         )
         async with uow_context as uow:
-            refresh_token: TokenSchema = data_or_error(
+            refresh_token: dict = data_or_error(
                 data=await uow.token.get(jti=payload_refresh["jti"]),
                 error=NotFoundEntity,
                 params=["refresh_pair_tokens"],
+            )
+            refresh_token: TokenSchema = self._token_serializer.to_schema_or_dict(
+                refresh_token
             )
 
             refresh_token.access_iat = int(
@@ -106,9 +117,12 @@ class TokenService(ABCTokenService):
         now = datetime_utc()
 
         async with uow_context as uow:
-            await uow.token.update(
-                id=refresh_token.id, obj_in={"jti": jti, "access_iat": now}
-            )
+            if await self._jwt_service.is_latest_refresh(payload_refresh["exp"]):
+                await uow.token.update(
+                    id=refresh_token.id, obj_in={"jti": jti, "access_iat": now}
+                )
+            else:
+                await uow.token.delete(jti=payload_refresh["jti"])
             await uow.commit()
 
         return await self._jwt_service.create_access_refresh_jwt(
@@ -119,4 +133,16 @@ class TokenService(ABCTokenService):
             expire_refresh=payload_refresh["exp"],
         )
 
-    async def delete_token(self): ...
+    async def delete_token(
+        self,
+        access_token_encode: str,
+        uow_context: UOWContextProtocol,
+    ) -> None:
+        payload_access: DefaultAccessPayload = await self._jwt_service.decode_token(
+            access_token_encode
+        )
+        async with uow_context as uow:
+            await uow.token.delete(
+                user_uid=payload_access["sub"], device_id=payload_access["device_id"]
+            )
+            await uow.commit()

@@ -20,6 +20,3 @@ class Token(Base):
         UUID(as_uuid=True), nullable=False, unique=True
     )
     access_iat: Mapped[datetime] = mapped_column(type_=TIMESTAMP(timezone=True))
-    is_active: Mapped[base.is_active]
-
-    __serialize_class__ = TokenSchema

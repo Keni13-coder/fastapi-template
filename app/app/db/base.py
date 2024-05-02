@@ -2,9 +2,8 @@ from datetime import datetime
 from typing import Annotated
 import uuid
 
-import pydantic
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, declared_attr
-from sqlalchemy.inspection import inspect
+
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import MetaData, text
 
@@ -20,7 +19,6 @@ class Base(DeclarativeBase):
 
     repr_cols_num = 3
     repr_cols = tuple()
-    __serialize_class__ = dict
 
     def __repr__(self):
         """Relationships не используются в repr(), т.к. могут вести к неожиданным подгрузкам"""
@@ -30,17 +28,6 @@ class Base(DeclarativeBase):
                 cols.append(f"{col}={getattr(self, col)}")
 
         return f"<{self.__class__.__name__} {', '.join(cols)}>"
-
-    def to_dict(self):
-        if isinstance(self.__serialize_class__, dict):
-            return {
-                c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs
-            }
-        else:
-            return self.__serialize_class__.model_validate(self, from_attributes=True)
-
-    def to_dict_with_relationship(self, schema: pydantic.BaseModel):
-        return schema.model_validate(self, from_attributes=True)
 
     @declared_attr.directive
     def __tablename__(cls) -> str:

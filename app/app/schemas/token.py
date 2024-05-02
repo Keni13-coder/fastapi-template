@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 from uuid import UUID
-from pydantic import UUID4, BaseModel, Field, model_validator
+from pydantic import UUID4, BaseModel, Field, field_validator, model_validator
 
 
 class RefreshToken(BaseModel):
@@ -13,7 +13,6 @@ class RefreshToken(BaseModel):
 
 class TokenSchema(RefreshToken):
     id: UUID4
-    is_active: bool
 
 
 class UpdateTokens(BaseModel):
@@ -24,7 +23,22 @@ class UpdateTokens(BaseModel):
 class ResponseToken(BaseModel):
     refresh_token: str
     access_token: str
+    expire_refresh: Union[int, datetime]
     token_type: Literal["bearer"] = "bearer"
+
+    @field_validator("expire_refresh")
+    @classmethod
+    def exp_to_int(cls, v):
+        if isinstance(v, int):
+            return v
+        return int(v.timestamp())
+
+    @field_validator("expire_refresh")
+    @classmethod
+    def exp_to_int(cls, v):
+        if isinstance(v, int):
+            return v
+        return int(v.timestamp())
 
 
 class Payload(BaseModel):
