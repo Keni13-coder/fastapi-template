@@ -1,5 +1,5 @@
 # FastApi Template
-[![tests-check Status](https://github.com/Keni13-coder/fastapi-template/actions/workflows/ci/badge.svg?branch=develop)](https://github.com/Keni13-coder/fastapi-template/actions/workflows/ci.yml)
+[![Python Code and Alembic Checks](https://github.com/Keni13-coder/fastapi-template/actions/workflows/ci.yml/badge.svg?branch=develop&event=pull_request)](https://github.com/Keni13-coder/fastapi-template/actions/workflows/ci.yml)
 ### Запуск шаблона:
 
 1) Создайте файл .env, данные нужные для запуска можно посмотреть в .env.example
