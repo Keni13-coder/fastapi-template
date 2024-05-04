@@ -10,14 +10,14 @@ from app.utils.const import UserRole
 
 class BaseUser(BaseModel):
     login: str = Field(title="Логин")
-    created_at: datetime = Field(title="Создан", default_factory=datetime.now)
-    updated_at: datetime = Field(title="Обновлен", default_factory=datetime.now)
 
 
 class ResponseUserSchema(BaseUser):
     id: UUID | None = Field(title="ID", default=None)
     is_active: bool = Field(title="Активность", default=True)
     role: UserRole = Field(title="Роль пользователя", default=UserRole.user)
+    created_at: datetime = Field(title="Создан")
+    updated_at: datetime = Field(title="Обновлен")
 
 
 class UserPassword(BaseModel):
@@ -27,16 +27,13 @@ class UserPassword(BaseModel):
         pattern="[A-Za-z0-9@#$%^&+=]{4,}",
         min_length=4,
         max_length=100,
-        alias="hashed_password",
     )
 
 
 class CreateUser(BaseUser, UserPassword): ...
 
 
-class UpdateLogin(BaseModel):
-    login: str = Field(title="Логин")
-    updated_at: datetime = Field(title="Обновлен", default_factory=datetime.now)
+class UpdateLogin(BaseUser): ...
 
 
 class СhangePassword(UserPassword): ...
