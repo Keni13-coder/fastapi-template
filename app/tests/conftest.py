@@ -1,4 +1,5 @@
 import asyncio
+from typing import AsyncGenerator
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +19,10 @@ from tests.fixture_for_schemas.user import (
 )
 from tests.fixture_for_schemas.token import create_data_token, update_data_token
 from tests.fixture_for_schemas.jwt import create_jwt_access, create_jwt_refresh
+
+from app.services.subdomain.jwt_service import ABCJWT, JWTService
+from app.services.token import ABCTokenService, TokenService, TokenSchema
+from app.services.subdomain.serialize_service import TokenEntitySerializer
 
 
 @pytest.fixture(scope="session")
@@ -55,8 +60,26 @@ async def prepare_database():
 
 
 @pytest.fixture
-async def get_session():
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_sessionmaker(engine, expire_on_commit=False)() as session:
         yield session
         await session.rollback()
         await session.close()
+
+
+
+
+@pytest.fixture(scope="class")
+def token_service() -> ABCTokenService:
+    return TokenService(
+        jwt_service=JWTService,
+        serializer=TokenEntitySerializer(serialize_schema=TokenSchema),
+    )
+    
+@pytest.fixture(scope='class')
+async def clear_user_db(get_session: AsyncSession):
+    ...
+    yield
+    await get_session.execute(text('TRUNCATE public.user'))
+    await get_session.commit()
+    
