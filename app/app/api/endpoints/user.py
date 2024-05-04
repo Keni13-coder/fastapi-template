@@ -1,43 +1,25 @@
-from uuid import UUID
+from fastapi import Depends, status
 
-from fastapi import APIRouter, Depends, status
+from app.services.initialization_services import user_service
+from app.utils.costum_router import APInfoRouter
+from app.schemas.user import ResponseUserSchema
+from app.api.dependencies import RegisterDep, LoginUser
+from app.api.responses import login_responses, register_responses
 
-from app.services.user import UserService
-from app.models.user import User
-
-from app.api.pagination import PaginationParams, Paginator, BasePaginationResponse
-
-router = APIRouter()
-
-
-# @router.get(
-#     "/user",
-#     response_model=UserSchema | None,
-#     status_code=status.HTTP_200_OK,
-#     summary="Get user",
-#     description="This endpoints retrieve user",
-# )
-# @inject
-# @commit_and_close_session
-# async def get_user(
-#     user_id: UUID, user_service: UserService = Depends(Provide[Container.user_service])
-# ) -> UserSchema:
-#     return await user_service.get_user(user_id=user_id)
+router = APInfoRouter()
 
 
-# @router.get(
-#     "/users",
-#     response_model=BasePaginationResponse[UserSchema],
-#     status_code=status.HTTP_200_OK,
-#     summary="Get user",
-#     description="TThis endpoint retrieves all the users",
-# )
-# @inject
-# @commit_and_close_session
-# async def list_users(
-#     user_service: UserService = Depends(Provide[Container.user_service]),
-#     pagination: PaginationParams = Depends(PaginationParams),
-# ) -> BasePaginationResponse[UserSchema]:
-#     response = await user_service.list_users()
-#     paginator = Paginator(data=response, pagination_params=pagination)
-#     return paginator.get_response()
+@router.post(
+    '/register/',
+    status_code=status.HTTP_201_CREATED,
+    responses=register_responses
+    )
+async def register(registred_user: RegisterDep):
+    return dict(ditail=registred_user)
+
+@router.post(
+    '/login/',
+    responses=login_responses
+    )
+async def login_user(token_data: LoginUser):
+    return dict(ditail=token_data)

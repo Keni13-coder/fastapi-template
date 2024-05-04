@@ -5,28 +5,14 @@ import asyncio
 
 from app.exceptions.jwt_error import TokenExpiredException, InvalidTokenException
 from app.exceptions.not_found import NotFoundEntity
-from app.services.user import ABCUserService, ResponseUserSchema
+from app.services.user import ResponseUserSchema
 from app.services.token import ABCTokenService
-from app.services.jwt_service import ABCJWT
+from app.services.subdomain.jwt_service import ABCJWT
 from app.uow.typing.fake_type_protocol import FakeUOWContextProtocol
 from app.utils.utc_now import datetime_utc
 
 
-class TestUserService:
 
-    async def test_get_user(
-        self,
-        get_fakeUOW: FakeUOWContextProtocol,
-        user_service: ABCUserService,
-        get_user_fake: ResponseUserSchema,
-    ):
-        user = await user_service.get_user(get_user_fake.id, get_fakeUOW)
-        assert user
-
-    async def test_list_users(self, get_fakeUOW, user_service: ABCUserService):
-        users = await user_service.list_users(get_fakeUOW)
-        assert users
-        assert len(users) == 1
 
 
 @pytest.mark.usefixtures("high_lifetime")
