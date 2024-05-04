@@ -49,4 +49,4 @@ class BaseErrorHTTPException(HTTPException):
         return message_data
 
     def __getattr__(self, item):
-        raise ValueError(f'There is no attribute named {item}')
+        raise ValueError(f"There is no attribute named {item}")

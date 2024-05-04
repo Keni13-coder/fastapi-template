@@ -20,7 +20,6 @@ class ResponseUserSchema(BaseUser):
     updated_at: datetime = Field(title="Обновлен")
 
 
-
 class UserPassword(BaseModel):
     password: str = Field(
         ...,
@@ -34,7 +33,7 @@ class UserPassword(BaseModel):
 class CreateUser(BaseUser, UserPassword): ...
 
 
-class UpdateLogin(BaseUser):...
+class UpdateLogin(BaseUser): ...
 
 
 class СhangePassword(UserPassword): ...

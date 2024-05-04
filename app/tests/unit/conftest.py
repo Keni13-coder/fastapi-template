@@ -18,9 +18,11 @@ def get_fakeUOW() -> FakeUOWContext:
 
 # endregion
 
+
 @pytest.fixture(scope="class")
 def jwt_service() -> ABCJWT:
     return JWTService(algorithm=settings.algorithm, secret_key=settings.secret_key)
+
 
 # utils fixture region
 @pytest.fixture
@@ -30,12 +32,7 @@ async def get_user_fake(create_data_user: CreateUser):
         data = create_data_user
         data = data.model_dump()
         now = datetime_utc()
-        data.update(
-            dict(
-                created_at=now,
-                updated_at=now
-            )
-        )
+        data.update(dict(created_at=now, updated_at=now))
         user = await uow.user.create(obj_in=data)
         assert user
 

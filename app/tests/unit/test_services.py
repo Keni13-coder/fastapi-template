@@ -12,9 +12,6 @@ from app.uow.typing.fake_type_protocol import FakeUOWContextProtocol
 from app.utils.utc_now import datetime_utc
 
 
-
-
-
 @pytest.mark.usefixtures("high_lifetime")
 class TestJWTService:
     data_access = {"access_token": ""}

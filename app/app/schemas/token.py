@@ -31,5 +31,6 @@ class TokenLoginResponse(BaseModel):
             return v
         return int(v.timestamp())
 
+
 class ResponseToken(TokenLoginResponse):
     refresh_token: str

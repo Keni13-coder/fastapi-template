@@ -14,15 +14,14 @@ from app.services.subdomain.hasher_service import Hasher
 def repository_user(get_session):
     return RepositoryUser(session=get_session)
 
+
 @pytest.fixture(scope="class")
 def user_service(token_service) -> ABCUserService:
     return UserService(
         token_service=token_service,
         serializer=UserEntitySerializer(ResponseUserSchema),
-        hasher_class=Hasher()
-        )
-
-
+        hasher_class=Hasher(),
+    )
 
 
 @pytest.fixture(scope="class")

@@ -9,5 +9,3 @@ from app.schemas.token import TokenLoginResponse
 
 RegisterDep = Annotated[ResponseUserSchema, Depends(user_service.register_user)]
 LoginUser = Annotated[TokenLoginResponse, Depends(user_service.login_user)]
-
-

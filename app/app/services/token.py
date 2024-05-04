@@ -6,7 +6,11 @@ import uuid
 from app.exceptions.jwt_error import InvalidTokenException
 from app.exceptions.not_found import NotFoundEntity
 from app.schemas.token import ResponseToken, TokenSchema
-from app.services.subdomain.jwt_service import ABCJWT, DefaultAccessPayload, DefaultRefreshPayload
+from app.services.subdomain.jwt_service import (
+    ABCJWT,
+    DefaultAccessPayload,
+    DefaultRefreshPayload,
+)
 from app.core.config import settings
 from app.uow.typing.type_protocol import UOWContextProtocol
 from app.utils.utc_now import datetime_utc
@@ -85,7 +89,7 @@ class TokenService(ABCTokenService):
             refresh_token: dict = data_or_error(
                 data=await uow.token.get(jti=payload_refresh["jti"]),
                 error=NotFoundEntity,
-                params=("refresh_pair_tokens",)
+                params=("refresh_pair_tokens",),
             )
             refresh_token: TokenSchema = self._token_serializer.to_schema_or_dict(
                 refresh_token

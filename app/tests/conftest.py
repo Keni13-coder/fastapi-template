@@ -67,19 +67,17 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         await session.close()
 
 
-
-
 @pytest.fixture(scope="class")
 def token_service() -> ABCTokenService:
     return TokenService(
         jwt_service=JWTService,
         serializer=TokenEntitySerializer(serialize_schema=TokenSchema),
     )
-    
-@pytest.fixture(scope='class')
+
+
+@pytest.fixture(scope="class")
 async def clear_user_db(get_session: AsyncSession):
     ...
     yield
-    await get_session.execute(text('TRUNCATE public.user'))
+    await get_session.execute(text("TRUNCATE public.user"))
     await get_session.commit()
-    
