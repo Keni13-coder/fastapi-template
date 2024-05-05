@@ -55,9 +55,17 @@ class ABCUserService(abc.ABC):
 
 class UserService(ABCUserService):
 
-    async def get_user(self, uow_context: UOWContextProtocol, **filters) -> None: ...
+    async def get_user(self, uow_context: UOWContextProtocol, **filters) -> None:
+        async with uow_context as uow:
+            user = await uow.user.get(**filters)
+            response = {} or user and self._serializer.to_schema_or_dict(user)
+            return response
 
-    async def list_users(self, uow_context: UOWContextProtocol, **filters) -> None: ...
+    async def list_users(self, uow_context: UOWContextProtocol, **filters) -> None:
+        async with uow_context as uow:
+            users = await uow.user.list(**filters)
+            responses = {} or users and self._serializer.to_list_schema(users)
+            return responses
 
     async def register_user(
         self, user: CreateUser, uow_context: UOWV1Dep

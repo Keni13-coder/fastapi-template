@@ -3,10 +3,9 @@ from fastapi import APIRouter, Body, Depends, Form, HTTPException, status, Uploa
 from app.utils.global_dependencies import UOWV1Dep
 
 from app.schemas.base import ResponseDefault, ResponseMessage
-from app.utils.costum_router import APInfoRouter
 from app.services.user import UserService
 
-router = APInfoRouter()
+router = APIRouter()
 
 
 @router.post(

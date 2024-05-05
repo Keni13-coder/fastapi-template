@@ -1,3 +1,4 @@
+import json
 import httpx
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,9 +24,30 @@ class TestUserPoint:
         users = await get_session.execute(text("SELECT id FROM public.user"))
         assert users.scalars().all()
 
-    async def test_login(self, ac: httpx.AsyncClient, create_data_user: CreateUser):
+    async def test_login(
+        self,
+        ac: httpx.AsyncClient,
+        create_data_user: CreateUser
+        ):
         response = await ac.post(
             url=f"{settings.api_v1_str}/user/login/", data=create_data_user.model_dump()
         )
         assert response.status_code == 200
         assert response.cookies["token"]
+
+    async def test_get_all(        
+        self,
+        ac: httpx.AsyncClient
+        ):
+        response = await ac.get(
+            url=f"{settings.api_v1_str}/user/get-all/"
+        )
+        assert response.status_code == 200
+        response_data = json.loads(response.read().decode())
+        assert response_data['detail']
+        null_response = await ac.get(
+            url=f"{settings.api_v1_str}/user/get-all/", params={'offset': 1}
+        )
+        response_data_null = json.loads(null_response.read().decode())
+        assert response.status_code == 200
+        assert not response_data_null['detail']

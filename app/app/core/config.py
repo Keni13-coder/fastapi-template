@@ -59,8 +59,7 @@ class Settings(BaseSettings):
             "Set-Cookie",
             "Access-Control-Allow-Headers",
             "Access-Control-Allow-Origin",
-            "Authorization",
-            "Router-Tags",  # надо проверить рабоатет ли, потому что записано через маленькие в добавлении `router-tags`
+            "Authorization"
         ],
         title="Допустимые заголовки",
     )
