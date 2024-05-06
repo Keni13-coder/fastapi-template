@@ -1,21 +1,71 @@
-from fastapi import Depends, status
+from typing import Union
+from fastapi import Depends, Request, status, APIRouter
 
-from app.services.initialization_services import user_service
-from app.utils.costum_router import APInfoRouter
 from app.schemas.user import ResponseUserSchema
-from app.api.dependencies import RegisterDep, LoginUser
-from app.api.responses import login_responses, register_responses
+from app.schemas.token import TokenLoginResponse
+from app.schemas.base import ResponseDefault,  ResponseWithParams
+from app.api.dependencies import RegisterUser, LoginUser, OffsetLimitParam, CurrentUser
+from app.utils.global_dependencies import UOWV1Dep
+from app.api.responses import login_responses, register_responses, current_user_responses
+from app.services.initialization_services import user_service
 
-router = APInfoRouter()
+router = APIRouter()
 
 
 @router.post(
-    "/register/", status_code=status.HTTP_201_CREATED, responses=register_responses
+    "/register/",
+    status_code=status.HTTP_201_CREATED,
+    responses=register_responses,
+    response_model=ResponseDefault[ResponseUserSchema]
 )
-async def register(registred_user: RegisterDep):
-    return dict(ditail=registred_user)
+async def register(request: Request, registred_user: RegisterUser):
+    return dict(
+        detail=[registred_user],
+        info_api=request
+    )
 
 
-@router.post("/login/", responses=login_responses)
-async def login_user(token_data: LoginUser):
-    return dict(ditail=token_data)
+@router.post(
+    "/login/",
+    responses=login_responses,
+    response_model=ResponseDefault[TokenLoginResponse]
+)
+async def login(request: Request, token_data: LoginUser):
+    return dict(
+        detail=[token_data],
+        info_api=request
+    )
+
+
+@router.get(
+    '/get-one/',
+    responses=current_user_responses,
+    response_model=ResponseDefault[ResponseUserSchema]
+)
+async def get_one(
+    request: Request,
+    current_user: CurrentUser,
+):
+    return dict(
+        detail=[current_user],
+        info_api=request
+    )
+
+
+@router.get(
+    '/get-all/',
+    response_model=ResponseWithParams[
+        Union[
+            ResponseUserSchema,
+            dict
+        ]
+    ]
+)
+async def get_all(request: Request, params: OffsetLimitParam, uow_context: UOWV1Dep):
+    params = params.model_dump()
+    response = await user_service.list_users(uow_context=uow_context, **params)
+    return dict(
+        detail=response,
+        info_api=request,
+        params=params
+    )

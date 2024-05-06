@@ -1,5 +1,5 @@
 import abc
-from typing import Generic, Type, TypeVar, Union
+from typing import Generic, List, Type, TypeVar, Union
 
 import pydantic
 from sqlalchemy.inspection import inspect
@@ -9,7 +9,8 @@ from app.schemas.token import TokenSchema
 from app.schemas.user import ResponseUserSchema
 
 
-SerializeSchema = TypeVar("SerializeSchema", bound=Union[pydantic.BaseModel, dict])
+SerializeSchema = TypeVar(
+    "SerializeSchema", bound=Union[pydantic.BaseModel, dict])
 
 
 class ABCEntitySerializer(abc.ABC, Generic[SerializeSchema]):
@@ -25,7 +26,20 @@ class ABCEntitySerializer(abc.ABC, Generic[SerializeSchema]):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def to_schema_or_dict(self, data: Union[Base, dict]) -> SerializeSchema:
+    def to_schema_or_dict(self, data: Union[Base, dict]) -> Union[SerializeSchema, dict]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def to_list_schema(
+        self,
+        list_data: Union[
+            List[Base],
+            List[dict]
+        ]
+    ) -> Union[
+        List[SerializeSchema],
+        List[dict]
+    ]:
         raise NotImplementedError
 
     @staticmethod
@@ -55,6 +69,23 @@ class BaseSerializer(ABCEntitySerializer[SerializeSchema]):
         else:
             return data if isinstance(data, dict) else self.to_dict(data)
 
+    def to_list_schema(
+        self,
+        list_data: Union[
+            List[Base],
+            List[dict]
+        ]
+    ) -> Union[
+        List[SerializeSchema],
+        List[dict]
+    ]:
+       
+        if issubclass(self._serialize_schema, pydantic.BaseModel):
+            return [self._serialize_schema.model_validate(model, from_attributes=True) for model in list_data]
+
+        else:
+            return [self.to_dict(model) for model in list_data]
+
     @staticmethod
     def to_own_scheme(
         data: Union[Base, dict], schema: pydantic.BaseModel
@@ -62,7 +93,9 @@ class BaseSerializer(ABCEntitySerializer[SerializeSchema]):
         return schema.model_validate(data, from_attributes=True)
 
 
-class TokenEntitySerializer(BaseSerializer[TokenSchema]): ...
+class TokenEntitySerializer(BaseSerializer[TokenSchema]):
+    ...
 
 
-class UserEntitySerializer(BaseSerializer[ResponseUserSchema]): ...
+class UserEntitySerializer(BaseSerializer[ResponseUserSchema]):
+    ...
