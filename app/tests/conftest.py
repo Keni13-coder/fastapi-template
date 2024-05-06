@@ -24,7 +24,7 @@ from app.services.subdomain.jwt_service import ABCJWT, JWTService
 from app.services.token import ABCTokenService, TokenService, TokenSchema
 from app.services.subdomain.serialize_service import TokenEntitySerializer
 
-
+# loop region
 @pytest.fixture(scope="session")
 def event_loop():
     try:
@@ -35,6 +35,10 @@ def event_loop():
     yield loop
     loop.close()
 
+# endregion
+
+
+# data bases region
 
 @pytest.fixture(scope="session")
 async def prepare_database():
@@ -59,6 +63,13 @@ async def prepare_database():
     await engine.dispose()
 
 
+@pytest.fixture(scope="class")
+async def clear_user_db(get_session: AsyncSession):
+    ...
+    yield
+    await get_session.execute(text("TRUNCATE public.user"))
+    await get_session.commit()
+
 @pytest.fixture
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_sessionmaker(engine, expire_on_commit=False)() as session:
@@ -66,7 +77,9 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         await session.rollback()
         await session.close()
 
+# endregion
 
+# class region
 @pytest.fixture(scope="class")
 def token_service() -> ABCTokenService:
     return TokenService(
@@ -74,10 +87,25 @@ def token_service() -> ABCTokenService:
         serializer=TokenEntitySerializer(serialize_schema=TokenSchema),
     )
 
+# endregion
+
+
+# settings region
+@pytest.fixture(scope="class")
+def high_lifetime():
+    settings.expired_access = 20
+
+
+@pytest.fixture
+def last_time_refresh():
+    settings.expired_access = 20
+    yield
+    settings.expired_access = 0
+
 
 @pytest.fixture(scope="class")
-async def clear_user_db(get_session: AsyncSession):
-    ...
-    yield
-    await get_session.execute(text("TRUNCATE public.user"))
-    await get_session.commit()
+def low_lifetime():
+    settings.expired_access = 0
+    settings.expired_refresh = 10
+
+# endregion

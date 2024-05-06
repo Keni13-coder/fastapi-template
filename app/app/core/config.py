@@ -33,7 +33,6 @@ class Settings(BaseSettings):
     secret_key: str = Field(
         title="Секретный ключ", default_factory=lambda: secrets.token_hex(16)
     )
-    algorithm: str = Field(default="HS256")
     log_level: str = Field(title="Уровень логирования", default=LogLevel.DEBUG)
     project_name: str = Field(
         title="Имя проекта", default="Unnamed", alias="PROJECT_SLUG"
@@ -64,7 +63,7 @@ class Settings(BaseSettings):
         title="Допустимые заголовки",
     )
     CORS_ORIGINS: list[str] = Field(
-        default=["https://www.youtube.com/"],  # проверить нужно ли добавлять порт
+        default=["http://localhost:3000"],  # проверить нужно ли добавлять порт
         title="Допустимые сервера для подключения",
     )
     CORS_METHODS: list[str] = Field(
