@@ -40,5 +40,3 @@ async def get_user_fake(create_data_user: CreateUser):
 
 
 # endregion
-
-

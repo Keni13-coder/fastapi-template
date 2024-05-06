@@ -14,8 +14,6 @@ api_router.include_router(token.router, prefix="/token", tags=["Token"])
 @api_router.get("/", response_model=ResponseDefault[ResponseMessage])
 async def get_info_api(request: Request):
     return dict(
-        detail=[
-            {"message": f"available routes via api {settings.api_v1_str}"}
-            ],
-        info_api=request  
+        detail=[{"message": f"available routes via api {settings.api_v1_str}"}],
+        info_api=request,
     )

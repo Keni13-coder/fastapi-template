@@ -9,20 +9,22 @@ router = APIRouter()
 fake_router = APIRouter()
 
 
-@fake_router.get('/create-post/')
+@fake_router.get("/create-post/")
 async def create(request: Request):
-    return  {'message': [request.base_url, request.url_for('login')]}
+    return {"message": [request.base_url, request.url_for("login")]}
 
-@router.get('/login/')
+
+@router.get("/login/")
 async def login():
-    return {'message': 'login'}
+    return {"message": "login"}
 
-@app.get('/test/')
+
+@app.get("/test/")
 async def get_test(request: Request):
-    return {'message': [request.base_url, request.url_for('login')]}
+    return {"message": [request.base_url, request.url_for("login")]}
 
 
-main_router.include_router(router, prefix='/user')
-main_router.include_router(fake_router, prefix='/post')
+main_router.include_router(router, prefix="/user")
+main_router.include_router(fake_router, prefix="/post")
 
 app.include_router(router=main_router)

@@ -9,36 +9,30 @@ router = APIRouter()
 
 
 @router.post(
-    '/refresh/',
+    "/refresh/",
     response_model=ResponseDefault[TokenLoginResponse],
-    responses=refresh_responses
+    responses=refresh_responses,
 )
-async def refresh_token(
-    request: Request,
-    token_data: RefreshTokenDep
-    ):
-    return dict(
-        detail=[token_data],
-        info_api=request
-    )
+async def refresh_token(request: Request, token_data: RefreshTokenDep):
+    return dict(detail=[token_data], info_api=request)
+
 
 @router.delete(
-    '/logout/',
+    "/logout/",
     response_model=ResponseDefault[ResponseMessage],
-    responses=logout_responses
+    responses=logout_responses,
 )
 async def logout(
     request: Request,
     response: Response,
     uow_context: UOWV1Dep,
-    authorization: AccessToken
-    ):
-    await token_service.delete_token(access_token_encode=authorization, uow_context=uow_context)
-    response.delete_cookie('token', httponly=True, secure=True)
-    
+    authorization: AccessToken,
+):
+    await token_service.delete_token(
+        access_token_encode=authorization, uow_context=uow_context
+    )
+    response.delete_cookie("token", httponly=True, secure=True)
+
     return dict(
-        detail=[
-            {"message": 'Token was successfully deleted'}
-            ],
-        info_api=request  
+        detail=[{"message": "Token was successfully deleted"}], info_api=request
     )

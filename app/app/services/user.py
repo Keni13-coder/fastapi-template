@@ -53,30 +53,25 @@ class ABCUserService(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def current_user(self,
-                           request: Request,
-                           authorization: AccessToken,
-                           uow_context: UOWV1Dep
-                           ) -> Union[ResponseUserSchema, dict]:
+    async def current_user(
+        self, request: Request, authorization: AccessToken, uow_context: UOWV1Dep
+    ) -> Union[ResponseUserSchema, dict]:
         raise NotImplementedError
 
 
 class UserService(ABCUserService):
 
-    async def get_user(self, uow_context: UOWContextProtocol, **filters) -> Union[ResponseUserSchema, dict]:
+    async def get_user(
+        self, uow_context: UOWContextProtocol, **filters
+    ) -> Union[ResponseUserSchema, dict]:
         async with uow_context as uow:
             user = await uow.user.get(**filters)
             response = {} or user and self._serializer.to_schema_or_dict(user)
             return response
 
     async def list_users(
-        self,
-        uow_context: UOWContextProtocol,
-        **filters
-    ) -> Union[
-            list[ResponseUserSchema],
-            list[dict]
-    ]:
+        self, uow_context: UOWContextProtocol, **filters
+    ) -> Union[list[ResponseUserSchema], list[dict]]:
         async with uow_context as uow:
             users = await uow.user.list(**filters)
             responses = {} or users and self._serializer.to_list_schema(users)
@@ -104,8 +99,7 @@ class UserService(ABCUserService):
             user: User = data_or_error(
                 data=await uow.user.get(
                     login=login_data.login,
-                    password=self._hasher_class.create_hash(
-                        login_data.password),
+                    password=self._hasher_class.create_hash(login_data.password),
                 ),
                 error=AUTHException,
                 params=("login_user",),
@@ -125,19 +119,20 @@ class UserService(ABCUserService):
             return tokens.model_dump(exclude={"refresh_token"})
 
     async def current_user(
-        self,
-        request: Request,
-        authorization: AccessToken,
-        uow_context: UOWV1Dep
+        self, request: Request, authorization: AccessToken, uow_context: UOWV1Dep
     ) -> Union[ResponseUserSchema, dict]:
-        payload: DefaultAccessPayload = await self._token_service.jwt_service.decode_token(token=authorization)
+        payload: DefaultAccessPayload = (
+            await self._token_service.jwt_service.decode_token(token=authorization)
+        )
 
         user = data_or_error(
             data=await self.get_user(uow_context=uow_context, id=payload["sub"]),
             error=TokenNotAuthenticatedException,
-            params=('current_user',),
+            params=("current_user",),
             key_params={
-                'headers': {"WWW-Authenticate": f"Bearer, authorization={request.url_for('login')} resource={request.base_url}"}
-            }
+                "headers": {
+                    "WWW-Authenticate": f"Bearer, authorization={request.url_for('login')} resource={request.base_url}"
+                }
+            },
         )
         return self._serializer.to_schema_or_dict(user)

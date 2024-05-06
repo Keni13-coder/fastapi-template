@@ -49,6 +49,7 @@ class ABCTokenService(abc.ABC):
     def jwt_service(self):
         return self._jwt_service
 
+
 class TokenService(ABCTokenService):
 
     async def create_pair_tokens(

@@ -58,7 +58,7 @@ class Settings(BaseSettings):
             "Set-Cookie",
             "Access-Control-Allow-Headers",
             "Access-Control-Allow-Origin",
-            "Authorization"
+            "Authorization",
         ],
         title="Допустимые заголовки",
     )
