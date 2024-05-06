@@ -40,22 +40,3 @@ async def get_user_fake(create_data_user: CreateUser):
 
 
 # endregion
-
-
-# start region
-@pytest.fixture(scope="class")
-def high_lifetime():
-    settings.expired_access = 20
-
-
-@pytest.fixture
-def last_time_refresh():
-    settings.expired_access = 20
-    yield
-    settings.expired_access = 0
-
-
-@pytest.fixture(scope="class")
-def low_lifetime():
-    settings.expired_access = 0
-    settings.expired_refresh = 10

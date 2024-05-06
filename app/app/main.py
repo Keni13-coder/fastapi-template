@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.error_handler.exception_handlers import exception_handlers
 from app.core.config import settings
-from app.utils.hateoas import setup_header_tags
 from app.api import api_routers
 from app.middlewares.logger import LoggerMiddleware
 
@@ -27,7 +26,6 @@ def create_app():
     fastapi_app.include_router(
         api_routers.api_router,
         prefix=settings.api_v1_str,
-        dependencies=[Depends(setup_header_tags)],
     )
 
     return fastapi_app

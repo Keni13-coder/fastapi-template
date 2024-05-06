@@ -1,5 +1,4 @@
 import abc
-from datetime import datetime, timedelta, timezone
 from typing import Type
 import uuid
 
@@ -45,6 +44,10 @@ class ABCTokenService(abc.ABC):
         self, access_token_encode: str, uow_context: UOWContextProtocol
     ) -> None:
         raise NotImplementedError
+
+    @property
+    def jwt_service(self):
+        return self._jwt_service
 
 
 class TokenService(ABCTokenService):
